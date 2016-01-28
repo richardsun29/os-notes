@@ -49,3 +49,28 @@ However, using a pointer is less portable because the file descriptor data struc
 
 <!-- Break! -->
 
+## Signals
+
+Why do we use signals when they are so much trouble?
+- Asynchronous I/O:
+	- When we do a `read()`, we wait until the entire file gets read, and then continue. `aio_read()` on the other hand returns right away and sends a `SIGIO` signal when it's done reading.
+- Errors in the code: 
+	- If we're running a large program, it's possible that we don't want to crash the entire program if there's an error such as division by 0, floating point overflow, or an invalid instruction. Instead, we want to catch the signal, deal with the error, and move on without exiting entirely.
+- `Ctrl-C`: 
+	- The user is impatient and wants the program to exit, or the program is in an infinite loop, and we don't want the program to exit right away. Hitting `Ctrl-C` sends the `SIGINT` signal.
+- Impending power outage:
+	- If a computer's power plug is pulled, it might only have a few milliseconds before the computer entirely shuts down, but in that time the operating system can get all the programs to properly exit first, and it does so by sending the `SIGPWR` signal.
+- Creating many children processes:
+	- It would be expensive for the parent to call `waitpid(-1, &status, WNOHANG)` often to find out if any child process has finished yet while it's doing its own work; plus, depending on how often the parent polls the children, there will also be a time delay between a child finishing and the parent finding out. Instead, the parent can catch the `SIGCHLD` signal, which is automatically sent to the parent whenever a child is finished.
+- User goes away
+	- If the user logged out of their account, disconnected from the server, etc., the operating system sends the `SIGHUP` signal to the program.
+- End a bad process
+	- A SEASNET sysadmin can end a fork bomb that a student created by using the `SIGKILL` signal, which kills a process and can't be caught or ignored. The command `kill -KILL -6010` kills the process with PID 6010, and the negative sign on the PID means it kills the children processes too.
+- End a runaway program
+	- Kill a program that won't stop running
+- Suspend a process
+	- `kill -STOP 2542` suspends the process with PID 2542 using a `SIGSTOP` signal, and `kill -CONT 2542` continues that process.
+- Set a timeout:
+	- `alarm(20)` sends a `SIGALRM` signal in 20 seconds, and this signal by default kills the program.
+- Important, unusual, or unexpected events
+	- Some OSes have a `SIGEOF` signal, but this doesn't seem to be a very unusual event since every file has an EOF, so having a signal dedicated to it seems unnecessary.
