@@ -1,10 +1,13 @@
 DISTDIR = lecture6
 TARBALL = $(DISTDIR).tar.gz
 
-all:
+all: $(DISTDIR)
 	./compile.sh
 
-dist:
+$(DISTDIR):
+	mkdir -p $@
+
+dist: all
 	tar czf $(TARBALL) $(DISTDIR)
 
 clean:
