@@ -1,7 +1,9 @@
-DISTDIR = lecture7
+DISTDIR = lecture6
 TARBALL = $(DISTDIR).tar.gz
+
 dist:
 	tar czf $(TARBALL) $(DISTDIR)
 
 clean:
-	rm $(TARBALL)
+	rm -rf $(TARBALL) $(DISTDIR)
+
