@@ -8,7 +8,7 @@ echo '<!DOCTYPE html>
 </head>
 <body>' >>$output
 
-pandoc --from markdown --to html index.md >> $output
+pandoc --from markdown_github --to html index.md >> $output
 
 echo '</body>
 </html>' >> $output
