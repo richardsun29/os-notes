@@ -1,6 +1,7 @@
 DISTDIR = lecture6
 HTML = $(DISTDIR)/index.html
 MARKDOWN = index.md
+CSS = style.css
 TARBALL = $(DISTDIR).tar.gz
 
 all: $(DISTDIR) $(HTML)
@@ -8,7 +9,7 @@ all: $(DISTDIR) $(HTML)
 $(DISTDIR):
 	mkdir -p $@
 
-$(HTML): compile.sh $(MARKDOWN)
+$(HTML): compile.sh $(MARKDOWN) $(CSS)
 	./compile.sh
 
 check: $(HTML)

@@ -1,3 +1,8 @@
 body {
   font-family: Helvetica, Arial, sans-serif;
 }
+
+code {
+  background-color: #ddd;
+  padding: 1px;
+}
