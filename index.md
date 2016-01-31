@@ -99,3 +99,87 @@ Why do we use signals when they are so much trouble?
 	- `alarm(20)` sends a `SIGALRM` signal in 20 seconds, and this signal by default kills the program.
 - Important, unusual, or unexpected events
 	- Some OSes have a `SIGEOF` signal, but this doesn't seem to be a very unusual event since every file has an EOF, so having a signal dedicated to it seems unnecessary.
+
+### Receiving signals
+
+To catch a specific signal, we call the `signal` function: `sighandler_t signal(int signum, sighandler_t handler);`. `signum` is the signal number, and `handler` is the function that will run when the signal is caught. `sighandler_t` is defined as `typedef void (*sighandler_t)(int);`, which is a function that takes an integer and returns void. `handler` is the new signal handler that will get run, and the function returns the old handler.
+
+This new signal handler can be run at any time in the middle of the rest of the program. For example, if your code looks like:
+```c
+signal(29, handlerFunc);
+x = y + 1;
+z = w + x;
+```
+The signal handler can be run in the middle of the instructions that add w and x, since the program can trigger an interrupt and run the signal handler between every pair of assembly instructions, such as the load and add instructions. This means that the signal handler can potentially modify variables and create race conditions.
+
+### Signal handler example
+
+We can write gzip, a program that compresses a directory, with a signal handler so that if the user interrupts the program, the program will delete the compressed directory that it started to make. For example, `$ gzip foo` creates foo.gz, and if the program is interrupted, foo.gz should be deleted.
+
+With the following code, foo.gz will remain if the program is interrupted:
+```c
+int fd = open("foo", O_RDONLY);
+int fo = open("foo.gz", O_WRONLY | O_CREAT);
+while (compress(fd, fo))
+	continue;
+close(fd);
+close(fo);
+unlink("foo"); // delete foo at the end
+```
+
+We can attempt to add a signal handler like so:
+```c
+int fd = open("foo", O_RDONLY);
+signal(SIGINT, cleanup);
+int fo = open("foo.gz", O_WRONLY | O_CREAT);
+while (compress(fd, fo))
+	continue;
+close(fd);
+close(fo);
+unlink("foo"); // delete foo at the end
+
+...
+
+static void cleanup(int sig) {
+	unlink("foo.gz"); // delete foo.gz during cleanup
+	_exit(1);
+}
+```
+However, the second line introduces a race condition: if the signal handler is called right before foo.gz is opened in the third line, the program will attempt to delete foo.gz before it is even created. This means we should move the call to `signal()` to the third line:
+```c
+int fd = open("foo", O_RDONLY);
+int fo = open("foo.gz", O_WRONLY | O_CREAT);
+signal(SIGINT, cleanup);
+while (compress(fd, fo))
+	continue;
+close(fd);
+close(fo);
+unlink("foo"); // delete foo at the end
+
+...
+
+static void cleanup(int sig) {
+	unlink("foo.gz"); // delete foo.gz during cleanup
+	_exit(1);
+}
+```
+This is better, but it's possible that the user can interrupt the program after it finishes writing to foo.gz, in which case `cleanup()` will delete foo.gz, which isn't what we want. We can solve this by setting the `SIGINT` signal back to its default behavior after we close fd; putting `SIG_DFL` as the `handler` argument in `signal()` enables the signal number's default behavior.
+```c
+int fd = open("foo", O_RDONLY);
+int fo = open("foo.gz", O_WRONLY | O_CREAT);
+signal(SIGINT, cleanup);
+while (compress(fd, fo))
+	continue;
+close(fd);
+close(fo);
+signal(SIGINT, SIG_DFL);
+unlink("foo"); // delete foo at the end
+
+...
+
+static void cleanup(int sig) {
+	unlink("foo.gz"); // delete foo.gz during cleanup
+	_exit(1);
+}
+```
+There's one last problem though: if the `SIGINT` signal is sent right before `unlink("foo")`, foo is left behind and foo.gz is too, since we're now using the default behavior for `SIGINT` instead of calling `cleanup()`. The solution to this issue is presented in the next lecture.
