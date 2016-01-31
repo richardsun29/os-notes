@@ -4,12 +4,12 @@ MARKDOWN = index.md
 CSS = style.css
 TARBALL = $(DISTDIR).tar.gz
 
-all: $(DISTDIR) $(HTML)
+all: $(HTML)
 
 $(DISTDIR):
 	mkdir -p $@
 
-$(HTML): compile.sh $(MARKDOWN) $(CSS)
+$(HTML): compile.sh $(DISTDIR) $(MARKDOWN) $(CSS)
 	./compile.sh
 
 check: $(HTML)
