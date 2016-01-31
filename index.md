@@ -74,6 +74,26 @@ $ cat /tmp/pipe > out &     # cat hangs, trying to read from the pipe
 $ echo "Hello" > /tmp/pipe  # writes to the pipe and unblocks cat
 ```
 
+### More things that could go wrong
+
+- Opening a pipe and never using it
+	- For example:
+```c
+int ok = pipe(fd) == 0;
+for (;;) { /* do something else */ }
+```
+This opens a pipe and never uses it, taking up kernel memory that no other process can use; this is called a pipe leak.
+- Not closing write/read ends
+	- If a write end of a pipe is never closed, the read ends of a pipe will keep hanging. For example, `while :; do :; done; | cat` will cause `cat` to hang since the while loop in the read end loops infinitely and doesn't return.
+	- If a shell like `sh` implements `a | b` and it only closes `a`, `b` will hang since `sh` has still access to the write end of the pipe. To solve this, `sh` must close its connections to both `a` and `b`, or else there's still 1 writer to the write end.
+- Pipe deadlock
+	- If a parent communicates with a child process using a pipe, and that process communicates to the parent using another pipe, it's possible for both processes to hang. For example, if the child process executes `sed 'p;p;p;'`, this outputs every line that it receives from the parent 3 times to its own pipe to the parent. Then the child's pipe will fill up faster than the parent's pipe will, and the parent doesn't read from the child's pipe, so the child hangs. The parent is still writing to its pipe, but that pipe will eventually fill up too, and the parent will hang too.
+	- This will only happen if the child writes to its pipe faster than the parent can. Other commands are safe; for example, if the child executes `sort`, it won't cause pipe deadlock since `sort` would wait until all input is finished (i.e., parent has finished writing) until it starts writing back to its own pipe.
+
+### Orthogonality
+
+Running `(rm bigfile; grep interesting) < bigfile` will have output if `bigfile` contains 'interesting' since file descriptors access files at a lower level than the file names; a file is orthogonal to its name. `rm` simply removes the name, but doesn't delete the data on disk since `grep` is accessing the file descriptor; a file won't be removed until all file descriptors pointing to it go away (just like `pipe()`). The OS keeps files around until no more readers are interested.
+
 ## Signals
 
 Why do we use signals when they are so much trouble?
