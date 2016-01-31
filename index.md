@@ -1,4 +1,4 @@
-# OS Organization Revisited
+# Lecture 6 - OS Organization Revisited
 
 
 ## Processes and Files
