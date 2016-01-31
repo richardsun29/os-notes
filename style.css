@@ -7,10 +7,30 @@ code {
 	display: inline-block;
 }
 
+p code, li code {
+  padding: 1px;
+}
+
 .sourceCode {
 	padding: 15px;
 }
 
 .co {
 	color: #888;
+}
+
+.kw {
+  color: #90f;
+}
+
+.dt {
+  color: #03f;
+}
+
+.st {
+  color: #600;
+}
+
+.dv {
+  color: #360;
 }
