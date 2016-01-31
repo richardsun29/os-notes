@@ -64,6 +64,15 @@ What can go wrong here?
 
 Because the way pipes are handled depend on if there are any readers or writers, processes will suspend indefinitely if another process holds onto a copy of a file descriptor but does not use it. In order to deal with this, a parent process and its children have to `close` the pipe ends that it is not using.
 
+### Named pipes
+
+In Linux, there are also named pipes, which are pipes that are actually a file. Using named pipes, processes can communicate to other processes that are not a parent or child.
+
+```bash
+$ mkfifo /tmp/pipe          # make a file that is a pipe
+$ cat /tmp/pipe > out &     # cat hangs, trying to read from the pipe
+$ echo "Hello" > /tmp/pipe  # writes to the pipe and unblocks cat
+```
 
 ## Signals
 

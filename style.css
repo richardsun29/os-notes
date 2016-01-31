@@ -1,8 +1,16 @@
 body {
-  font-family: Helvetica, Arial, sans-serif;
+	font-family: Helvetica, Arial, sans-serif;
 }
 
 code {
-  background-color: #ddd;
-  padding: 1px;
+	background-color: #ddd;
+	display: inline-block;
+}
+
+.sourceCode {
+	padding: 15px;
+}
+
+.co {
+	color: #888;
 }
